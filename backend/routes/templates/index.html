@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Profile Enhancer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8 text-blue-600">LinkedIn Profile Enhancer</h1>
+
+        <!-- URL Input Form -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <form method="POST" class="space-y-4">
+                <div>
+                    <label for="profile_url" class="block text-sm font-medium text-gray-700">LinkedIn Profile URL</label>
+                    <input type="url" name="profile_url" id="profile_url" required
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                           value="{{ profile_url if profile_url else '' }}">
+                </div>
+                <button type="submit"
+                        class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Fetch Profile
+                </button>
+            </form>
+        </div>
+
+        {% if error %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+            <span class="block sm:inline">{{ error }}</span>
+        </div>
+        {% endif %}
+
+        {% if profile_info %}
+        <div class="space-y-6">
+            <!-- Profile Information -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-start space-x-4">
+                    <img src="{{ profile_info.profile_picture }}" alt="Profile Picture"
+                         class="w-24 h-24 rounded-full object-cover">
+                    <div class="flex-grow">
+                        <h2 class="text-2xl font-bold">{{ profile_info.name }}</h2>
+                        <p class="text-gray-600">{{ profile_info.location }}</p>
+                        <div class="mt-4 flex space-x-6">
+                            <div class="flex items-center">
+                                <span class="text-sm font-medium text-gray-700">{{ profile_info.connections_count }} connections</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-sm font-medium text-gray-700">{{ profile_info.followers_count }} followers</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Headline Generator -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-semibold mb-4">Headline Generator</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Current Headline</label>
+                        <p id="current-headline" class="mt-1 text-gray-600">{{ profile_info.headline }}</p>
+                    </div>
+                    <button onclick="generateHeadline()"
+                            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                        Generate Improved Headline
+                    </button>
+                    <div id="generated-headline" class="hidden mt-4">
+                        <label class="block text-sm font-medium text-gray-700">Generated Headline</label>
+                        <p class="mt-1 text-green-600" id="headline-result"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Generator -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-semibold mb-4">Professional Summary Generator</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Current Summary</label>
+                        <p id="current-summary" class="mt-1 text-gray-600">{{ profile_info.summary }}</p>
+                    </div>
+                    <button onclick="generateSummary()"
+                            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                        Generate Enhanced Summary
+                    </button>
+                    <div id="generated-summary" class="hidden mt-4">
+                        <label class="block text-sm font-medium text-gray-700">Generated Summary</label>
+                        <p class="mt-1 text-green-600" id="summary-result"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skills Generator -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-semibold mb-4">Skills Recommender</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Current Skills</label>
+                        <div id="current-skills" class="mt-1 flex flex-wrap gap-2">
+                            {% for skill in profile_info.skills %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                {{ skill }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <button onclick="generateSkills()"
+                            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                        Generate Skill Suggestions
+                    </button>
+                    <div id="generated-skills" class="hidden mt-4">
+                        <label class="block text-sm font-medium text-gray-700">Suggested Skills</label>
+                        <p class="mt-1 text-green-600" id="skills-result"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Experience Section -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-semibold mb-4">Experience</h3>
+                <div id="experience-section" class="space-y-4">
+                    {% for position in profile_info.experience %}
+                    <div class="border-b pb-4 last:border-b-0 last:pb-0 position">
+                        <h4 class="font-medium position-title">{{ position.title }}</h4>
+                        <p class="text-gray-600 company-name">{{ position.company }}</p>
+                        <p class="text-sm text-gray-500">{{ position.start_date }} - {{ position.end_date }}</p>
+                        <p class="text-sm text-gray-500">{{ position.location }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function generateHeadline() {
+            const currentHeadline = document.getElementById('current-headline').textContent;
+            
+            fetch('/generate_headline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `user_headline=${encodeURIComponent(currentHeadline)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('generated-headline').classList.remove('hidden');
+                document.getElementById('headline-result').textContent = data.updated_headline;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to generate headline. Please try again.');
+            });
+        }
+
+        function generateSummary() {
+            const experience = Array.from(document.querySelectorAll('.position')).map(p => {
+                const title = p.querySelector('.position-title').textContent;
+                const company = p.querySelector('.company-name').textContent;
+                return `${title} at ${company}`;
+            }).join('; ');
+            
+            const skills = Array.from(document.querySelectorAll('#current-skills span'))
+                .map(s => s.textContent.trim())
+                .join(', ');
+
+            fetch('/generate_summary', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `experience=${encodeURIComponent(experience)}&skills=${encodeURIComponent(skills)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('generated-summary').classList.remove('hidden');
+                document.getElementById('summary-result').textContent = data.updated_summary;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to generate summary. Please try again.');
+            });
+        }
+
+        function generateSkills() {
+            const experience = Array.from(document.querySelectorAll('.position')).map(p => {
+                const title = p.querySelector('.position-title').textContent;
+                const company = p.querySelector('.company-name').textContent;
+                return `${title} at ${company}`;
+            }).join('; ');
+            
+            const currentSkills = Array.from(document.querySelectorAll('#current-skills span'))
+                .map(s => s.textContent.trim())
+                .join(', ');
+
+            fetch('/generate_skills', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `experience=${encodeURIComponent(experience)}&current_skills=${encodeURIComponent(currentSkills)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('generated-skills').classList.remove('hidden');
+                document.getElementById('skills-result').textContent = data.suggested_skills;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to generate skills. Please try again.');
+            });
+        }
+    </script>
+</body>
+</html>
